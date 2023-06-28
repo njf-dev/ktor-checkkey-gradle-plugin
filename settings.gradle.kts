@@ -1,6 +1,10 @@
 pluginManagement {
+    val use_jitpack: String by settings
 
-    includeBuild("checkkey-gradle-plugin")
+    if (!use_jitpack.toBoolean()) {
+        includeBuild("checkkey-gradle-plugin")
+    }
+
     repositories {
         gradlePluginPortal()
         mavenLocal()
@@ -9,9 +13,10 @@ pluginManagement {
         maven("https://jitpack.io")
     }
 
-    val kotlin_version:String by settings
-    val ktor_version:String by settings
-    val kotlin_serialization_version:String by settings
+    val kotlin_version: String by settings
+    val ktor_version: String by settings
+    val kotlin_serialization_version: String by settings
+
     plugins {
         kotlin("jvm") version kotlin_version
         id("io.ktor.plugin") version ktor_version
