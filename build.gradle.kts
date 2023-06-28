@@ -1,6 +1,6 @@
 //buildscript {
 //    dependencies {
-//        classpath("com.github.njf-dev:ktor-checkkey-gradle-plugin:0.0.1")
+//        classpath("com.github.njf-dev:ktor-checkkey-gradle-plugin:0.0.2")
 //    }
 //}
 

@@ -1,1 +1,1 @@
-./gradlew :checkkey-gradle-plugin:publishToMavenLocal
+chmod +x ./gradlew && ./gradlew :checkkey-gradle-plugin:publishToMavenLocal
