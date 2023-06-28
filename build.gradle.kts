@@ -1,3 +1,9 @@
+//buildscript {
+//    dependencies {
+//        classpath("com.github.njf-dev:ktor-checkkey-gradle-plugin:0.0.1")
+//    }
+//}
+
 plugins {
     kotlin("jvm") apply false
     id("io.ktor.plugin") apply false
