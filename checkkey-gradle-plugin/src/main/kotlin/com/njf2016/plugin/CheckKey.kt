@@ -21,8 +21,8 @@ class CheckKey : Plugin<Project> {
     private val TAG = CheckKey::class.java.name
 
     override fun apply(project: Project) {
-        project.findProject(":app")?.let { app ->
-            val resources = app.file("src/main/resources")
+        project.allprojects {
+            val resources = this.file("src/main/resources")
             if (resources.isDirectory) {
                 resources.listFiles { file ->
                     // 展开资源文件夹并过滤 *.conf 文件
