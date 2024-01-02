@@ -35,12 +35,17 @@ class CheckKey : Plugin<Project> {
                         // 兼容打包和测试运行需要，证书存放位置相对项目根目录
                         if (it.exists() || it.isAbsolute) it else File(project.rootDir, it.path)
                     }.let { file ->
-                        if (!file.exists()) {
+                        if (!file.exists() || ssl.forceRefresh) {
                             val mkdirs = file.parentFile?.mkdirs()
                             mkdirs?.log("mkdirs ")
 
-                            // 证书不存在，重新签名
-                            "配置文件 ${it.name} 的证书不存在，重新签名。".log()
+                            if (ssl.forceRefresh) {
+                                "forceRefresh 开启，将删除并重新创建文件".log()
+                                File(ssl.keyStore).deleteOnExit()
+                            } else {
+                                // 证书不存在，重新签名
+                                "配置文件 ${it.name} 的证书不存在，重新签名。".log()
+                            }
                             buildKeyStore(ssl, file)
                         } else {
                             // 解析证书
@@ -97,5 +102,6 @@ data class SSL(
     val keyStorePassword: String,
     val privateKeyPassword: String,
     val daysValid: Long = 365,
-    val domains: List<String> = listOf("localhost")
+    val domains: List<String> = listOf("localhost"),
+    val forceRefresh: Boolean = false,
 )
