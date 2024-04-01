@@ -7,7 +7,6 @@ val h2_version: String by project
 plugins {
     kotlin("jvm")
     id("io.ktor.plugin")
-    id("org.jetbrains.kotlin.plugin.serialization")
     id("com.njf2016.plugin.ktor-checkkey")
 }
 

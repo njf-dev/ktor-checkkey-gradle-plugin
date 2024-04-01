@@ -6,10 +6,15 @@ import io.github.config4k.extract
 import io.ktor.network.tls.certificates.*
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.kotlin.dsl.create
 import java.io.File
 import java.security.KeyStore
 import java.security.cert.X509Certificate
 import java.util.*
+
+abstract class CheckKeyExtension(project: Project) {
+    val forceRefresh = project.property(defaultValue = false)
+}
 
 /**
  * 根据 `app/src/main/resources` 内的配置文件，检查自签 ssl 证书是否存在或过期。
@@ -21,6 +26,8 @@ class CheckKey : Plugin<Project> {
     private val TAG = CheckKey::class.java.name
 
     override fun apply(project: Project) {
+        val checkKeyExtension = project.extensions.create<CheckKeyExtension>("checkKey")
+
         project.allprojects {
             val resources = this.file("src/main/resources")
             if (resources.isDirectory) {
@@ -35,11 +42,11 @@ class CheckKey : Plugin<Project> {
                         // 兼容打包和测试运行需要，证书存放位置相对项目根目录
                         if (it.exists() || it.isAbsolute) it else File(project.rootDir, it.path)
                     }.let { file ->
-                        if (!file.exists() || ssl.forceRefresh) {
+                        if (!file.exists() || checkKeyExtension.forceRefresh.get()) {
                             val mkdirs = file.parentFile?.mkdirs()
                             mkdirs?.log("mkdirs ")
 
-                            if (ssl.forceRefresh) {
+                            if (checkKeyExtension.forceRefresh.get()) {
                                 "forceRefresh 开启，将删除并重新创建文件".log()
                                 File(ssl.keyStore).deleteOnExit()
                             } else {
@@ -102,6 +109,5 @@ data class SSL(
     val keyStorePassword: String,
     val privateKeyPassword: String,
     val daysValid: Long = 365,
-    val domains: List<String> = listOf("localhost"),
-    val forceRefresh: Boolean = false,
+    val domains: List<String> = listOf("localhost")
 )

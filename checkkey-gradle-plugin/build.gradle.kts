@@ -9,7 +9,7 @@ plugins {
     `maven-publish`
 }
 
-val GROUP_ID="com.njf2016.plugin"
+val GROUP_ID = "com.njf2016.plugin"
 group = GROUP_ID
 
 repositories {
@@ -19,7 +19,7 @@ repositories {
 }
 
 gradlePlugin {
-    plugins.create("checkKey"){
+    plugins.create("checkKey") {
         id = "com.njf2016.plugin.ktor-checkkey"
         implementationClass = "com.njf2016.plugin.CheckKey"
     }
@@ -32,10 +32,10 @@ java {
 afterEvaluate {
     publishing {
         publications {
-            create<MavenPublication>("maven") {
+            create<MavenPublication>("XXX") {
                 groupId = GROUP_ID
                 artifactId = project.name
-                version = "1.0.0"
+                version = "1.1.0"
                 from(components["java"])
             }
         }
@@ -49,6 +49,7 @@ afterEvaluate {
 }
 
 dependencies {
+    implementation(gradleApi())
     implementation("io.github.config4k:config4k:0.5.0")
     implementation("io.ktor:ktor-network-tls-certificates:$ktor_version")
     implementation("io.ktor:ktor-network-tls-jvm:$ktor_version")
