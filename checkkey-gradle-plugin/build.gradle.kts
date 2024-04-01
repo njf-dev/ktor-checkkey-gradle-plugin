@@ -35,7 +35,7 @@ afterEvaluate {
             create<MavenPublication>("XXX") {
                 groupId = GROUP_ID
                 artifactId = project.name
-                version = "1.1.0"
+                version = "1.1.1"
                 from(components["java"])
             }
         }

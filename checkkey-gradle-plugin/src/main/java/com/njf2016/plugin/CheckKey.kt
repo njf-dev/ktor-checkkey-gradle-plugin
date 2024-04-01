@@ -7,6 +7,7 @@ import io.ktor.network.tls.certificates.*
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.hasPlugin
 import java.io.File
 import java.security.KeyStore
 import java.security.cert.X509Certificate
@@ -29,48 +30,52 @@ class CheckKey : Plugin<Project> {
         val checkKeyExtension = project.extensions.create<CheckKeyExtension>("checkKey")
 
         project.allprojects {
-            val resources = this.file("src/main/resources")
-            if (resources.isDirectory) {
-                resources.listFiles { file ->
-                    // 展开资源文件夹并过滤 *.conf 文件
-                    file.isFile && file.name.endsWith(".conf")
-                }?.forEach {
-                    // 解析 *.conf
-                    val ssl: SSL = ConfigFactory.parseFile(it).extract("ktor.security.ssl")
+            if (this.plugins.hasPlugin("io.ktor.plugin")) {
+                this.afterEvaluate {
+                    val resources = this.file("src/main/resources")
+                    if (resources.isDirectory) {
+                        resources.listFiles { file ->
+                            // 展开资源文件夹并过滤 *.conf 文件
+                            file.isFile && file.name.endsWith(".conf")
+                        }?.forEach {
+                            // 解析 *.conf
+                            val ssl: SSL = ConfigFactory.parseFile(it).extract("ktor.security.ssl")
 
-                    File(ssl.keyStore).let {
-                        // 兼容打包和测试运行需要，证书存放位置相对项目根目录
-                        if (it.exists() || it.isAbsolute) it else File(project.rootDir, it.path)
-                    }.let { file ->
-                        if (!file.exists() || checkKeyExtension.forceRefresh.get()) {
-                            val mkdirs = file.parentFile?.mkdirs()
-                            mkdirs?.log("mkdirs ")
+                            File(ssl.keyStore).let {
+                                // 兼容打包和测试运行需要，证书存放位置相对项目根目录
+                                if (it.exists() || it.isAbsolute) it else File(project.rootDir, it.path)
+                            }.let { file ->
+                                if (!file.exists() || checkKeyExtension.forceRefresh.get()) {
+                                    val mkdirs = file.parentFile?.mkdirs()
+                                    mkdirs?.log("mkdirs ")
 
-                            if (checkKeyExtension.forceRefresh.get()) {
-                                "forceRefresh 开启，将删除并重新创建文件".log()
-                                File(ssl.keyStore).deleteOnExit()
-                            } else {
-                                // 证书不存在，重新签名
-                                "配置文件 ${it.name} 的证书不存在，重新签名。".log()
-                            }
-                            buildKeyStore(ssl, file)
-                        } else {
-                            // 解析证书
-                            val keyStore = KeyStore.getInstance("JKS")
-                            keyStore.load(file.inputStream(), ssl.keyStorePassword.toCharArray())
-                            val notAfter = (keyStore.getCertificate(ssl.keyAlias) as X509Certificate).notAfter
+                                    if (checkKeyExtension.forceRefresh.get()) {
+                                        "forceRefresh 开启，将删除并重新创建文件".log()
+                                        File(ssl.keyStore).deleteOnExit()
+                                    } else {
+                                        // 证书不存在，重新签名
+                                        "配置文件 ${it.name} 的证书不存在，重新签名。".log()
+                                    }
+                                    buildKeyStore(ssl, file)
+                                } else {
+                                    // 解析证书
+                                    val keyStore = KeyStore.getInstance("JKS")
+                                    keyStore.load(file.inputStream(), ssl.keyStorePassword.toCharArray())
+                                    val notAfter = (keyStore.getCertificate(ssl.keyAlias) as X509Certificate).notAfter
 
-                            // 过期时间少于 60 天，重新签名
-                            val date30Day = Date(System.currentTimeMillis() + 60 * 24 * 60 * 60 * 1000L)
-                            if (!notAfter.after(date30Day)) {
-                                file.delete()
-                                "配置文件 ${it.name} 的证书 ${simple_yyyyMMddHHmmss.format(notAfter)} 过期，重新签名。".log()
-                                buildKeyStore(ssl, file)
-                            }
+                                    // 过期时间少于 60 天，重新签名
+                                    val date30Day = Date(System.currentTimeMillis() + 60 * 24 * 60 * 60 * 1000L)
+                                    if (!notAfter.after(date30Day)) {
+                                        file.delete()
+                                        "配置文件 ${it.name} 的证书 ${simple_yyyyMMddHHmmss.format(notAfter)} 过期，重新签名。".log()
+                                        buildKeyStore(ssl, file)
+                                    }
+                                }
+
+                                "配置文件 ${it.name} 的证书 ${file.path} 检查完成。"
+                            }.log()
                         }
-
-                        "配置文件 ${it.name} 的证书 ${file.path} 检查完成。"
-                    }.log()
+                    }
                 }
             }
         }
